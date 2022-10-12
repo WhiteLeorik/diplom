@@ -14,12 +14,7 @@ data class Task(
     var endTime: LocalDateTime
 ) : Comparable<Task> {
     constructor(priority: Int, name: String, description: String, durationHours: LocalTime) : this(
-        priority,
-        name,
-        description,
-        durationHours,
-        LocalDateTime.now(),
-        LocalDateTime.now()
+        priority, name, description, durationHours, LocalDateTime.now(), LocalDateTime.now()
     )
 
     init {
@@ -31,7 +26,27 @@ data class Task(
 }
 
 fun main() {
-    val george = User(1, "George", arrayOf(LocalTime.of(12, 30), LocalTime.of(17, 20)), arrayOf(1, 2, 7))
+    val george = User(
+        1,
+        "George",
+        arrayOf(
+            LocalTime.of(0, 0),
+            LocalTime.of(0, 0),
+                LocalTime.of(0, 0),
+                LocalTime.of(0, 0),
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
+                LocalTime.of(0, 0),
+                LocalTime.of(0, 0)
+        ),
+        arrayOf(1, 2, 7)
+    )
     val tasks = arrayOf(
         Task(2, "Имя", "Описание задачи", LocalTime.of(1, 30)),
         Task(1, "Имя2", "Описание задачи2", LocalTime.of(1, 30)),
@@ -40,41 +55,53 @@ fun main() {
         Task(5, "Имя", "Описание задачи", LocalTime.of(0, 30))
     )
 
-    if (tasks.isNotEmpty() && !dayoffCheck(george)) {
+    if (tasks.isNotEmpty()) {
         tasks.sort()
-        //var temp = taskAssignment(george, tasks)
-        //for (i in temp.indices) println(temp[i])
-        println(localTimeToDouble( LocalTime.of(17,59)))
-        println(periodLocalTime(LocalTime.of(1,29), LocalTime.of(1,59)))
+        val currentTasks = taskAssignment(george,tasks)
+        for(i in currentTasks.indices) println(currentTasks[i])
+
     }
 }
 
 fun taskAssignment(
-    user: User,
-    tasks: Array<Task>
+    user: User, tasks: Array<Task>
 ): Array<Task> //Метод выборки задач, которые в приоритете и помещаются в свободное время пользователя
 {
     val plugTask = Task(1, "Plug", " ", LocalTime.of(0, 0))
-    var currentTasks: Array<Task> = arrayOf(plugTask)
-    var taskDuration: Double = localTimeToDouble(tasks[0].durationTime)
-    val freeTime: Double = periodLocalTime(user.freeTime[0], user.freeTime[1])
-    for (i in tasks.indices) {
-        if (freeTime > taskDuration) taskDuration += localTimeToDouble(tasks[i + 1].durationTime) else {
-            for (x in 1..i) {
-                currentTasks = currentTasks.plus(tasks[x - 1])
+    var currentTasks = arrayOf(plugTask)
+    var freeTime = 0.0
+    var taskDuration = localTimeToDouble(tasks[0].durationTime)
+    var dayofWeek = LocalDateTime.now().dayOfWeek.value
+    var tempTasks = tasks
+    //periodLocalTime(user.freeTime[0], user.freeTime[1])
+    while(tempTasks.size != 0){
+            var holiday = false
+            for (j in user.dayoffNumber.indices) {
+                if (dayofWeek == user.dayoffNumber[j]) {
+                    holiday = true
+                    break
+                } else holiday = false
             }
-            break
+            if(!holiday) {
+                freeTime = periodLocalTime(user.freeTime[dayofWeek*2-1],user.freeTime[dayofWeek*2])
+                for (n in tempTasks.indices) {
+                    if (freeTime > taskDuration) {if(n+1<=tempTasks.size-1) taskDuration = sumLocalTime(taskDuration,localTimeToDouble(tempTasks[n + 1].durationTime)) else { taskDuration += 100.0 }} else {
+                        for (x in 1..n) {
+                            currentTasks = currentTasks.plus(tempTasks[x - 1])
+                            tempTasks = tempTasks.drop(x - 1).toTypedArray()
+                        }
+                        break
+                    }
+                }
+            }
+            dayofWeek = if(dayofWeek + 1 > 7 ) 1 else dayofWeek + 1
+            freeTime = 0.0
+            taskDuration = localTimeToDouble(tempTasks[0].durationTime)
         }
-    }
+
     return currentTasks
 }
 
-fun dayoffCheck(user: User): Boolean {
-    for (i in user.dayoffNumber.indices) {
-        if (LocalDateTime.now().dayOfWeek.value == user.dayoffNumber[i]) return true
-    }
-    return false
-}
 
 fun localTimeToDouble(time: LocalTime): Double {
     return time.hour + (time.minute * 0.01)
@@ -93,7 +120,7 @@ fun periodLocalTime(firstTime: LocalTime, lastTime: LocalTime): Double {
         if ((lastTimeDouble * 100).mod(100.0) < (firstTimeDouble * 100).mod(100.0)) ((firstTimeDouble * 100).mod(100.0) - (lastTimeDouble * 100).mod(
             100.0
         )) * 0.1 else ((lastTimeDouble * 100).mod(100.0) - (firstTimeDouble * 100).mod(100.0)) * 0.01
-    return abs(lastTimeDouble.toInt()- firstTimeDouble.toInt()) + minutes
+    return abs(lastTimeDouble.toInt() - firstTimeDouble.toInt()) + minutes
 }
 
 fun sumLocalTime(firstTime: Double, lastTime: Double): Double {
@@ -104,7 +131,6 @@ fun sumLocalTime(firstTime: Double, lastTime: Double): Double {
         ) + (lastTime * 100).mod(
             100.0
         ) - 60)) * 0.01
-
         else firstTime + lastTime
     return result
 }
