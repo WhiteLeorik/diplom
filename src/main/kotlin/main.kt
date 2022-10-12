@@ -3,7 +3,7 @@ import java.time.LocalTime
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-data class User(val id: Int, var nickname: String, var freeTime: Array<LocalTime>, var dayoffNumber: Array<Int>)
+data class User(val id: Int, var nickname: String, var freeTime: Array<LocalTime?>, var dayoffNumber: Array<Int?>)
 
 data class Task(
     var priority: Int,
@@ -14,12 +14,7 @@ data class Task(
     var endTime: LocalDateTime
 ) : Comparable<Task> {
     constructor(priority: Int, name: String, description: String, durationHours: LocalTime) : this(
-        priority,
-        name,
-        description,
-        durationHours,
-        LocalDateTime.now(),
-        LocalDateTime.now()
+        priority, name, description, durationHours, LocalDateTime.now(), LocalDateTime.now()
     )
 
     init {
@@ -31,7 +26,27 @@ data class Task(
 }
 
 fun main() {
-    val george = User(1, "George", arrayOf(LocalTime.of(12, 30), LocalTime.of(17, 20)), arrayOf(1, 2, 7))
+    val george = User(
+        1,
+        "George",
+        arrayOf(
+            null,
+            null,
+            null,
+            null,
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
+            null,
+            null
+        ),
+        arrayOf(1, 2, 7)
+    )
     val tasks = arrayOf(
         Task(2, "Имя", "Описание задачи", LocalTime.of(1, 30)),
         Task(1, "Имя2", "Описание задачи2", LocalTime.of(1, 30)),
@@ -44,28 +59,44 @@ fun main() {
         tasks.sort()
         //var temp = taskAssignment(george, tasks)
         //for (i in temp.indices) println(temp[i])
-        println(localTimeToDouble( LocalTime.of(17,59)))
-        println(periodLocalTime(LocalTime.of(1,29), LocalTime.of(1,59)))
+        println(localTimeToDouble(LocalTime.of(17, 59)))
+        println(periodLocalTime(LocalTime.of(1, 29), LocalTime.of(1, 59)))
     }
 }
 
 fun taskAssignment(
-    user: User,
-    tasks: Array<Task>
+    user: User, tasks: Array<Task>
 ): Array<Task> //Метод выборки задач, которые в приоритете и помещаются в свободное время пользователя
 {
     val plugTask = Task(1, "Plug", " ", LocalTime.of(0, 0))
-    var currentTasks: Array<Task> = arrayOf(plugTask)
-    var taskDuration: Double = localTimeToDouble(tasks[0].durationTime)
-    val freeTime: Double = periodLocalTime(user.freeTime[0], user.freeTime[1])
-    for (i in tasks.indices) {
-        if (freeTime > taskDuration) taskDuration += localTimeToDouble(tasks[i + 1].durationTime) else {
-            for (x in 1..i) {
-                currentTasks = currentTasks.plus(tasks[x - 1])
+    var currentTasks = arrayOf(plugTask)
+    var taskDuration = localTimeToDouble(tasks[0].durationTime)
+    var freeTime = 0.0
+    var removeTasks = tasks
+    var dayofWeek = LocalDateTime.now().dayOfWeek.value
+    //periodLocalTime(user.freeTime[0], user.freeTime[1])
+    for (i in removeTasks.indices){
+            var holiday = false
+            for (j in user.dayoffNumber.indices) {
+                if (dayofWeek == user.dayoffNumber[j]) {
+                    holiday = true
+                    break
+                } else holiday = false
             }
-            break
+        TODO("Сделать чтобы нормально возвращался фритайм и исправить общую сумму часов задач через новый метод сложения часов")
+            for (n in tasks.indices) {
+                if (freeTime > taskDuration) taskDuration += localTimeToDouble(tasks[n + 1].durationTime) else {
+                    for (x in 1..n) {
+                        currentTasks = currentTasks.plus(tasks[x - 1])
+                        removeTasks.drop(x-1)
+                    }
+                    break
+                }
+            }
+
+            dayofWeek = if(dayofWeek + 1 > 7 ) 1 else + 1
+            freeTime = 0.0
         }
-    }
     return currentTasks
 }
 
@@ -93,7 +124,7 @@ fun periodLocalTime(firstTime: LocalTime, lastTime: LocalTime): Double {
         if ((lastTimeDouble * 100).mod(100.0) < (firstTimeDouble * 100).mod(100.0)) ((firstTimeDouble * 100).mod(100.0) - (lastTimeDouble * 100).mod(
             100.0
         )) * 0.1 else ((lastTimeDouble * 100).mod(100.0) - (firstTimeDouble * 100).mod(100.0)) * 0.01
-    return abs(lastTimeDouble.toInt()- firstTimeDouble.toInt()) + minutes
+    return abs(lastTimeDouble.toInt() - firstTimeDouble.toInt()) + minutes
 }
 
 fun sumLocalTime(firstTime: Double, lastTime: Double): Double {
@@ -104,7 +135,6 @@ fun sumLocalTime(firstTime: Double, lastTime: Double): Double {
         ) + (lastTime * 100).mod(
             100.0
         ) - 60)) * 0.01
-
         else firstTime + lastTime
     return result
 }
