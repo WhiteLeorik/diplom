@@ -52,12 +52,13 @@ fun main() {
         Task(1, "Имя2", "Описание задачи2", LocalTime.of(1, 30)),
         Task(3, "Имя3", "Описание задачи4", LocalTime.of(3, 10)),
         Task(10, "Имя4", "Описание задачи", LocalTime.of(1, 0)),
-        Task(5, "Имя", "Описание задачи", LocalTime.of(0, 30))
+        Task(5, "Имя5", "Описание задачи", LocalTime.of(0, 30))
     )
 
     if (tasks.isNotEmpty()) {
         tasks.sort()
-        val currentTasks = taskAssignment(george,tasks)
+        var currentTasks = taskAssignment(george,tasks)
+        currentTasks = currentTasks.copyOfRange(1,currentTasks.size)
         for(i in currentTasks.indices) println(currentTasks[i])
 
     }
@@ -70,7 +71,7 @@ fun taskAssignment(
     val plugTask = Task(1, "Plug", " ", LocalTime.of(0, 0))
     var currentTasks = arrayOf(plugTask)
     var freeTime = 0.0
-    var taskDuration = localTimeToDouble(tasks[0].durationTime)
+    var taskDuration = 0.0
     var dayofWeek = LocalDateTime.now().dayOfWeek.value
     var tempTasks = tasks
     //periodLocalTime(user.freeTime[0], user.freeTime[1])
@@ -85,10 +86,14 @@ fun taskAssignment(
             if(!holiday) {
                 freeTime = periodLocalTime(user.freeTime[dayofWeek*2-1],user.freeTime[dayofWeek*2])
                 for (n in tempTasks.indices) {
-                    if (freeTime > taskDuration) {if(n+1<=tempTasks.size-1) taskDuration = sumLocalTime(taskDuration,localTimeToDouble(tempTasks[n + 1].durationTime)) else { taskDuration += 100.0 }} else {
-                        for (x in 1..n) {
-                            currentTasks = currentTasks.plus(tempTasks[x - 1])
-                            tempTasks = tempTasks.drop(x - 1).toTypedArray()
+                    if(n+1<=tempTasks.size-1) taskDuration = sumLocalTime(taskDuration,localTimeToDouble(tempTasks[n + 1].durationTime)) else { taskDuration += 100.0 }
+                    if (freeTime < taskDuration) {
+                        for (x in 0..n) {
+                            TODO("Не работает назначение задачи, придумать, как назначать текущую задачу, возможно нужно избавиться от цикла, проблема в том, что после первого дня x становится нулевым и добавляются те же задачи")
+                            currentTasks = currentTasks.plus(tasks[x])
+
+                           tempTasks = tempTasks.filterIndexed{ index, _-> index !=tempTasks.indexOf(tasks[x])}.toTypedArray()
+
                         }
                         break
                     }
@@ -96,7 +101,8 @@ fun taskAssignment(
             }
             dayofWeek = if(dayofWeek + 1 > 7 ) 1 else dayofWeek + 1
             freeTime = 0.0
-            taskDuration = localTimeToDouble(tempTasks[0].durationTime)
+            taskDuration = 0.0
+            if(currentTasks.last()==tempTasks[0]&&tempTasks.size == 1) break
         }
 
     return currentTasks
