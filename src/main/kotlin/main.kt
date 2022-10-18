@@ -1,7 +1,6 @@
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.math.abs
-import kotlin.math.roundToInt
 
 data class User(val id: Int, var nickname: String, var freeTime: Array<LocalTime>, var dayoffNumber: Array<Int>)
 
@@ -74,8 +73,9 @@ fun taskAssignment(
     var taskDuration = 0.0
     var dayofWeek = LocalDateTime.now().dayOfWeek.value
     var tempTasks = tasks
+    var x =0
     //periodLocalTime(user.freeTime[0], user.freeTime[1])
-    while(tempTasks.size != 0){
+    while(tempTasks.isNotEmpty()){
             var holiday = false
             for (j in user.dayoffNumber.indices) {
                 if (dayofWeek == user.dayoffNumber[j]) {
@@ -85,24 +85,24 @@ fun taskAssignment(
             }
             if(!holiday) {
                 freeTime = periodLocalTime(user.freeTime[dayofWeek*2-1],user.freeTime[dayofWeek*2])
-                for (n in tempTasks.indices) {
-                    if(n+1<=tempTasks.size-1) taskDuration = sumLocalTime(taskDuration,localTimeToDouble(tempTasks[n + 1].durationTime)) else { taskDuration += 100.0 }
-                    if (freeTime < taskDuration) {
-                        for (x in 0..n) {
-                            TODO("Не работает назначение задачи, придумать, как назначать текущую задачу, возможно нужно избавиться от цикла, проблема в том, что после первого дня x становится нулевым и добавляются те же задачи")
-                            currentTasks = currentTasks.plus(tasks[x])
+                taskDuration = localTimeToDouble(tempTasks[0].durationTime)
 
-                           tempTasks = tempTasks.filterIndexed{ index, _-> index !=tempTasks.indexOf(tasks[x])}.toTypedArray()
-
+                for ( i in tempTasks.indices){
+                    if(freeTime>taskDuration)  {
+                        currentTasks = if(x==0) currentTasks.plus(tasks[i])
+                        else {
+                            currentTasks.plus(tasks[currentTasks.indexOf(currentTasks.last())])
                         }
-                        break
+                        tempTasks = tempTasks.filterIndexed{ index, _-> index !=tempTasks.indexOf(currentTasks.last())}.toTypedArray()
+                        TODO("Сделать назначение бегинтайма и эндтайма, скорее всего НЕ в этом цикле, а в новом")
                     }
+                    if(i + 1 < tempTasks.size) taskDuration = sumLocalTime(taskDuration,localTimeToDouble(tempTasks[i+1].durationTime))
                 }
             }
             dayofWeek = if(dayofWeek + 1 > 7 ) 1 else dayofWeek + 1
             freeTime = 0.0
             taskDuration = 0.0
-            if(currentTasks.last()==tempTasks[0]&&tempTasks.size == 1) break
+            x++
         }
 
     return currentTasks
