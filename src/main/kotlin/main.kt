@@ -95,7 +95,6 @@ fun taskAssignment(
                         else {
                             currentTasks.plus(tasks[currentTasks.indexOf(currentTasks.last())])
                         }
-
                         tempTasks = tempTasks.filterIndexed{ index, _-> index !=tempTasks.indexOf(currentTasks.last())}.toTypedArray()
                         var durationTaskDouble = sumLocalTime(taskDuration, localTimeToDouble(user.freeTime[dayofWeek*2-2]))
                         currentTasks[i+1].beginTime = currentDate
