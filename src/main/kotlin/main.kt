@@ -1,6 +1,8 @@
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.hours
 
 data class User(val id: Int, var nickname: String, var freeTime: Array<LocalTime>, var dayoffNumber: Array<Int>)
 
@@ -59,7 +61,7 @@ fun main() {
         var currentTasks = taskAssignment(george,tasks)
         currentTasks = currentTasks.copyOfRange(1,currentTasks.size)
         for(i in currentTasks.indices) println(currentTasks[i])
-
+        println(LocalDateTime.now().plusHours(10.3.toLong()))
     }
 }
 
@@ -67,13 +69,14 @@ fun taskAssignment(
     user: User, tasks: Array<Task>
 ): Array<Task> //Метод выборки задач, которые в приоритете и помещаются в свободное время пользователя
 {
-    val plugTask = Task(1, "Plug", " ", LocalTime.of(0, 0))
+    var plugTask = Task(1, "Plug", " ", LocalTime.of(0, 0))
     var currentTasks = arrayOf(plugTask)
     var freeTime = 0.0
     var taskDuration = 0.0
     var dayofWeek = LocalDateTime.now().dayOfWeek.value
     var tempTasks = tasks
     var x =0
+    var currentDate = LocalDateTime.of(LocalDate.now(),LocalTime.of(0,0))
     //periodLocalTime(user.freeTime[0], user.freeTime[1])
     while(tempTasks.isNotEmpty()){
             var holiday = false
@@ -84,17 +87,23 @@ fun taskAssignment(
                 } else holiday = false
             }
             if(!holiday) {
-                freeTime = periodLocalTime(user.freeTime[dayofWeek*2-1],user.freeTime[dayofWeek*2])
+                freeTime = periodLocalTime(user.freeTime[dayofWeek*2-2],user.freeTime[dayofWeek*2-1])
                 taskDuration = localTimeToDouble(tempTasks[0].durationTime)
 
                 for ( i in tempTasks.indices){
-                    if(freeTime>taskDuration)  {
+TODO("засовывание задачи с таким же приоритетом или меньшем")
+                    var newFreeTime = freeTime - localTimeToDouble(tempTasks[i].durationTime )
+                    if(newFreeTime>0.0)  {
                         currentTasks = if(x==0) currentTasks.plus(tasks[i])
                         else {
                             currentTasks.plus(tasks[currentTasks.indexOf(currentTasks.last())])
                         }
                         tempTasks = tempTasks.filterIndexed{ index, _-> index !=tempTasks.indexOf(currentTasks.last())}.toTypedArray()
-                        TODO("Сделать назначение бегинтайма и эндтайма, скорее всего НЕ в этом цикле, а в новом")
+                        var durationTaskDouble = sumLocalTime(taskDuration, localTimeToDouble(user.freeTime[dayofWeek*2-2]))
+                        currentTasks[i+1].beginTime = currentDate
+                        currentTasks[i+1].beginTime = currentTasks[i+1].beginTime.plusHours(durationTaskDouble.toLong())
+                        currentTasks[i+1].beginTime = currentTasks[i+1].beginTime.plusMinutes((durationTaskDouble*100).mod(100.0).toLong())
+
                     }
                     if(i + 1 < tempTasks.size) taskDuration = sumLocalTime(taskDuration,localTimeToDouble(tempTasks[i+1].durationTime))
                 }
