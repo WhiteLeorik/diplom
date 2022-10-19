@@ -49,7 +49,7 @@ fun main() {
         arrayOf(1, 2, 7)
     )
     val tasks = arrayOf(
-        Task(2, "Имя", "Описание задачи", LocalTime.of(1, 30)),
+        Task(2, "Имя", "Описание задачи", LocalTime.of(5, 30)),
         Task(1, "Имя2", "Описание задачи2", LocalTime.of(1, 30)),
         Task(3, "Имя3", "Описание задачи4", LocalTime.of(3, 10)),
         Task(10, "Имя4", "Описание задачи", LocalTime.of(1, 0)),
@@ -87,23 +87,21 @@ fun taskAssignment(
                 } else holiday = false
             }
             if(!holiday) {
-                freeTime = periodLocalTime(user.freeTime[dayofWeek*2-2],user.freeTime[dayofWeek*2-1])
+                freeTime = periodLocalTime(localTimeToDouble(user.freeTime[dayofWeek*2-2]),localTimeToDouble(user.freeTime[dayofWeek*2-1]))
                 taskDuration = localTimeToDouble(tempTasks[0].durationTime)
-
                 for ( i in tempTasks.indices){
-TODO("засовывание задачи с таким же приоритетом или меньшем")
-                    var newFreeTime = freeTime - localTimeToDouble(tempTasks[i].durationTime )
-                    if(newFreeTime>0.0)  {
+                    if(freeTime>0.0)  {
                         currentTasks = if(x==0) currentTasks.plus(tasks[i])
                         else {
                             currentTasks.plus(tasks[currentTasks.indexOf(currentTasks.last())])
                         }
+
                         tempTasks = tempTasks.filterIndexed{ index, _-> index !=tempTasks.indexOf(currentTasks.last())}.toTypedArray()
                         var durationTaskDouble = sumLocalTime(taskDuration, localTimeToDouble(user.freeTime[dayofWeek*2-2]))
                         currentTasks[i+1].beginTime = currentDate
                         currentTasks[i+1].beginTime = currentTasks[i+1].beginTime.plusHours(durationTaskDouble.toLong())
                         currentTasks[i+1].beginTime = currentTasks[i+1].beginTime.plusMinutes((durationTaskDouble*100).mod(100.0).toLong())
-
+                        freeTime = sumLocalTime(-localTimeToDouble(currentTasks.last().durationTime ),freeTime)
                     }
                     if(i + 1 < tempTasks.size) taskDuration = sumLocalTime(taskDuration,localTimeToDouble(tempTasks[i+1].durationTime))
                 }
@@ -122,9 +120,9 @@ fun localTimeToDouble(time: LocalTime): Double {
     return time.hour + (time.minute * 0.01)
 }
 
-fun periodLocalTime(firstTime: LocalTime, lastTime: LocalTime): Double {
-    var firstTimeDouble: Double = localTimeToDouble(firstTime)
-    var lastTimeDouble: Double = localTimeToDouble(lastTime)
+fun periodLocalTime(firstDouble: Double, lastDouble: Double): Double {
+    var lastTimeDouble: Double = firstDouble
+    var firstTimeDouble: Double = lastDouble
     if (firstTimeDouble.toInt() != 0) if ((firstTimeDouble * 100).mod(100.0) == 0.0) firstTimeDouble =
         firstTimeDouble.toInt() - 1 + 0.60 else {
     } else if ((firstTimeDouble * 100).mod(100.0) == 0.0) firstTimeDouble = 23.60 else firstTimeDouble += 0.0
