@@ -4,7 +4,7 @@ import java.time.LocalTime
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.hours
 
-data class User(val id: Int, var nickname: String, var freeTime: Array<LocalTime>, var dayoffNumber: Array<Int>)
+data class User(val id: Int, var nickname: String, var freeTime: Array<LocalTime>, var dayoffNumber: Array<Int>, var holidays: Array<LocalDate>)
 
 data class Task(
     var priority: Int,
@@ -18,10 +18,10 @@ data class Task(
         priority, name, description, durationHours, LocalDateTime.now(), LocalDateTime.now()
     )
 
-    init {
-        //TODO("Доделать эндтайм, чтобы прибавлялся и день тоже")
-        endTime = beginTime.plusHours(durationTime.hour.toLong())
-        endTime.plusMinutes(durationTime.minute.toLong())
+    fun calculationEndTime() {
+        endTime = beginTime
+        endTime = endTime.plusHours(durationTime.hour.toLong())
+        endTime = endTime.plusMinutes(durationTime.minute.toLong())
     }
 
     override fun compareTo(other: Task): Int = this.priority.compareTo(other.priority)
@@ -32,8 +32,8 @@ fun main() {
         1,
         "George",
         arrayOf(
-            LocalTime.of(0, 0),
-            LocalTime.of(0, 0),
+            LocalTime.of(12, 30),
+            LocalTime.of(17, 20),
             LocalTime.of(0, 0),
             LocalTime.of(0, 0),
             LocalTime.of(12, 30),
@@ -47,7 +47,23 @@ fun main() {
             LocalTime.of(0, 0),
             LocalTime.of(0, 0)
         ),
-        arrayOf(1, 2, 7)
+        arrayOf(2, 7),
+        arrayOf(
+            LocalDate.of(2020,1,1),
+            LocalDate.of(2020,1,2),
+            LocalDate.of(2020,1,3),
+            LocalDate.of(2020,1,4),
+            LocalDate.of(2020,1,5),
+            LocalDate.of(2020,1,6),
+            LocalDate.of(2020,1,7),
+            LocalDate.of(2020,1,8),
+            LocalDate.of(2020,2,23),
+            LocalDate.of(2020,3,8),
+            LocalDate.of(2020,5,1),
+            LocalDate.of(2020,5,9),
+            LocalDate.of(2020,6,12),
+            LocalDate.of(2020,11,4)
+        )
     )
 
     val tasks = arrayOf(
@@ -75,33 +91,46 @@ fun taskAssignment(
     var freeTime = 0.0
     var dayofWeek = LocalDateTime.now().dayOfWeek.value
     var tempTasks = tasks
-    //TODO("Сделать проверку на назначение задач в середине рабочего дня и сделать проверку на праздники")
+    var dayNow = true
     var currentDate = LocalDateTime.of(LocalDate.now(), LocalTime.of(0, 0))
     while (tempTasks.isNotEmpty()) {
         var holiday = false
         for (j in user.dayoffNumber.indices) {
             if (dayofWeek == user.dayoffNumber[j]) {
                 holiday = true
+                dayNow = false
                 break
-            } else holiday = false
+            }
+        }
+        for (j in user.dayoffNumber.indices) {
+            if (LocalDate.now().monthValue == user.holidays[j].monthValue && LocalDate.now().dayOfMonth == user.holidays[j].dayOfMonth) {
+                holiday = true
+                dayNow = false
+                break
+            }
         }
         if (!holiday) {
             freeTime = periodLocalTime(
                 localTimeToDouble(user.freeTime[dayofWeek * 2 - 2]),
                 localTimeToDouble(user.freeTime[dayofWeek * 2 - 1])
             )
-            tempTasks.forEach {
+            if(localTimeToDouble(LocalTime.now()) > localTimeToDouble(user.freeTime[dayofWeek * 2 - 2]) && dayNow) {
+                freeTime = periodLocalTime(localTimeToDouble(LocalTime.now()),localTimeToDouble(user.freeTime[dayofWeek * 2 - 1]))
+                !dayNow
+            }
+                tempTasks.forEach {
                 if (freeTime > 0.0 && freeTime > localTimeToDouble(it.durationTime)) {
                     currentTasks = currentTasks.plus(it)
                     tempTasks = tempTasks.filterIndexed { index, _ -> index != tempTasks.indexOf(currentTasks.last()) }
                         .toTypedArray()
-                    freeTime = periodLocalTimeNotAbs(localTimeToDouble(currentTasks.last().durationTime), freeTime)
                     var durationTaskDouble =
-                        periodLocalTimeNotAbs(freeTime, localTimeToDouble(user.freeTime[dayofWeek * 2 - 2]))
+                        periodLocalTime(freeTime, localTimeToDouble(user.freeTime[dayofWeek * 2 - 1]))
+                    freeTime = periodLocalTimeNotAbs(localTimeToDouble(currentTasks.last().durationTime), freeTime)
                     currentTasks.last().beginTime = currentDate
                     currentTasks.last().beginTime = currentTasks.last().beginTime.plusHours(durationTaskDouble.toLong())
                     currentTasks.last().beginTime =
                         currentTasks.last().beginTime.plusMinutes((durationTaskDouble * 100).mod(100.0).toLong())
+                    currentTasks.last().calculationEndTime()
 
                 }
                 if(periodLocalTime(
